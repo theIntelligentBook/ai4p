@@ -20,8 +20,8 @@ node_modules/
 # For the moment, don't commit package-lock
 pacakge-lock.json
 
-# In the gh-pages version, we include the packed directory
-dist/
+# In the gh-pages version, we include the dist directory
+!dist/
 
 *.class
 *.tasty
