@@ -7,7 +7,7 @@ object Intro {
 
   val frontPage = <.div(
     <.div(^.attr("style") := "position: relative; top: 0;",
-      <.img(^.src := "assets/ai4p banner.jpg", ^.alt := "Thinking About Programming", ^.style := "max-width: 100%;"),
+      <.img(^.src := "images/ai4p banner.jpg", ^.alt := "Thinking About Programming", ^.style := "max-width: 100%;"),
       <.div(^.attr("style") := "position: absolute; bottom: 0px; width: 100%; text-align: center; ",
         markdown.div("# *AI4P. A little OER on how machines think*")
       )
