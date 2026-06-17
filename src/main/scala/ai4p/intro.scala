@@ -14,6 +14,11 @@ object Intro {
     ),
     <.div(
       <.div(^.cls := "lead",
+        <.dynamic.p("Welcome", serverLink.dynamic.map {
+          case Some(sl) => 
+            sl.name.getOrElse(" Unknown Student")
+          case _ => "Unknown Student"
+        }),
         markdown.div(
           """
             | AI is everywhere, but not everyone is a coder or a mathematician. 

@@ -13,6 +13,8 @@ given markdown:Markup = Markup(marked(_))
 @main def main() = {
     println("hello world")
 
+    parseLink(dom.window.location.hash)
+
     val n = dom.document.getElementById("render-here")
     n.innerHTML = ""
 
