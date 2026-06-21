@@ -34,6 +34,11 @@ object Intro {
       ),
       markdown.div(
         s"""
+           |The book is broken up into several chapters:
+           |
+           |1. [State spaces](#/pages/statespaces), in which we look at some classical AI for very small games
+           |   and start to think about searching among our options, looking ahead at their consequences,
+           |   and ascribing a value to outcomes.
            |""".stripMargin
       )
     ),
