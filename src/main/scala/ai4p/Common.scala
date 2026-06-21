@@ -62,7 +62,7 @@ object Common {
       s.split("---").foldLeft(db)( (db, s) => db.markdownSlide(s) )
 
     def imageSlide(caption:String, src:String) = db.veautifulSlide(
-      <.div(^.style := "margin: -50px; position: relative; top: 0;",
+      <.div(^.style := "margin: -50px; position: relative; top: 0; max-height: 100%;",
         <.img(^.src := src, ^.cls := "img-fluid", ^.style := "max-height: 100%; max-width: 100%; height: 100%;"),
         <.div(^.cls := "caption", caption, ^.style := "text-align: center; padding: 0.5em; background: #eee; position: absolute; bottom: 0")
       )

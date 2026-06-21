@@ -42,7 +42,42 @@ val cardsOfDoomStyling = Styling(
 ).register()
 
 
-case class CardsOfDoom(start:Int = 13, _myTurn:Boolean = true) extends DHtmlComponent {
+val cardsOfDoomGridStyling = Styling(
+  """|display: grid;
+     |grid-template-rows: repeat(4, auto);
+     |grid-auto-flow: column;
+     |grid-auto-columns: max-content;
+     |gap: 1rem;
+     |align-items: start;
+     |""".stripMargin
+).modifiedBy(
+  " .cod-card" -> 
+    """|    display: inline-flex;
+       |    padding: 20px;
+       |    margin: 10px;
+       |    width: 80px;
+       |    height: 100px;
+       |    font-family: "Michroma", sans-serif;
+       |    font-weight: bolder;
+       |    text-align: center;
+       |    border: 1px solid rebeccapurple;
+       |    border-radius: 5px;
+       |    background-color: #0d2d48;
+       |    background-image: linear-gradient(white 2px, transparent 2px), linear-gradient(90deg, white 2px, transparent 2px), linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px);
+       |    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+       |    background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+       |    color: white;
+       |    box-shadow: 10px 5px 5px #4e4d4d;
+       |""".stripMargin,
+  " .cod-card.cod-card-10" -> "background-color: #99461b;",
+  " .cod-card.cod-card-11" -> "background-color: #99461b;",
+  " .cod-card.cod-card-12" -> "background-color: #99461b;",
+  " .cod-card.cod-card-0" -> "background-color: #64000c;",
+  " .cod-card:first-child" -> "grid-row: 1 / -1;"
+).register()
+
+
+case class CardsOfDoom(start:Int = 13, _myTurn:Boolean = true, gridLayout:Boolean = false) extends DHtmlComponent {
 
     val remaining = stateVariable(start)
     val myTurn = stateVariable(_myTurn)
@@ -105,7 +140,7 @@ case class CardsOfDoom(start:Int = 13, _myTurn:Boolean = true) extends DHtmlComp
               }
             }
           ),
-          <.div(^.cls := cardsOfDoomStyling,
+          <.div(^.cls := (if gridLayout then cardsOfDoomGridStyling else cardsOfDoomStyling),
             for (i <- 0 until remaining.value) yield {
               <.div(^.cls := s"cod-card cod-card-$i",
                 i match {

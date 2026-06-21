@@ -48,7 +48,7 @@ val smallgames = DeckBuilder(1920, 1080)
   .imageSlide("The prisoners' dilemma", "images/prisonersdilemma.jpg")
   .veautifulSlide(<.div(
     <.h2("The Prisoners' Dilemma"),
-    marked("""
+    markdown.div("""
     |You'll be given the following sentences:
     |
     |* If you both stay silent, you'll both be sent to prison for a year
@@ -129,7 +129,7 @@ val smallgames = DeckBuilder(1920, 1080)
   .imageSlide("An aside: madman theory", "images/madman.jpg")
   .veautifulSlide(<.div(
     <.h2("An aside - 'madman theory'"),
-    marked("""
+    markdown.div("""
     |There is a theory that sometimes gets played in politics, ascribed to Richard Nixon, called "madman theory". That goes that if you
     |can persuade your opponent to *think* you're not playing rationally, you might be able to persuade *them* to make an suboptimal move.
     |
@@ -139,7 +139,7 @@ val smallgames = DeckBuilder(1920, 1080)
       <.tr(<.th("Nixon: Stay at peace"), <.td("Nixon: +2, Adversary: +1"), <.td("Nixon: -3, Adversary: +3")),
       <.tr(<.th("Nixon: Go to War"), <.td("Nixon: -2, Adversary: +5"), <.td("Nixon: -10, Adversary -8")), 
     ),
-    marked("In this table, it's always rationally in Nixon's interest to stay at peace, but if he can make his adversary *think* he'll act irrationally and go to war if they don't capitulate, he can get a better result.")
+    markdown.div("In this table, it's always rationally in Nixon's interest to stay at peace, but if he can make his adversary *think* he'll act irrationally and go to war if they don't capitulate, he can get a better result.")
   ))
   .markdownSlides(
     """
@@ -163,7 +163,7 @@ val smallgames = DeckBuilder(1920, 1080)
     CardsOfDoom(13)
   ))
   .veautifulSlide(<.div(
-    marked("""
+    markdown.div("""
     |## Cards of doom with 1 card 
     |
     |To analyse this one, let's play a variant with just one card and make you go first. 
@@ -173,7 +173,7 @@ val smallgames = DeckBuilder(1920, 1080)
     CardsOfDoom(1, false)
   ))
   .veautifulSlide(<.div(
-    marked("""
+    markdown.div("""
     |## Cards of Doom with 4 cards
     |
     |With 4 cards, there's a few moves available, but you can probably already see that only one of them wins
@@ -181,7 +181,7 @@ val smallgames = DeckBuilder(1920, 1080)
     CardsOfDoom(4, false)
   ))
   .veautifulSlide(<.div(
-    marked("""
+    markdown.div("""
     |## Cards of Doom with 4 cards
     |
     |Intuitively, this game has very few states. How many cards there are, and whose turn it is. So in a game of Cards of Doom
@@ -226,7 +226,7 @@ val smallgames = DeckBuilder(1920, 1080)
     },
   ))
   .veautifulSlide(<.div(
-    marked("""
+    markdown.div("""
     |## Minimax
     |
     |Let's change from "wins" and "loses" to 1 and 0. 
@@ -266,10 +266,10 @@ val smallgames = DeckBuilder(1920, 1080)
 
       <.table(^.cls := miniTabStyle, renderC(4, true))
     },
-    marked("To calculate the value of a move we can use 'minimax'. Starting at the leaves, if it's the opponent's turn then take the *minimum* value from the children, and if it's our turn take the *maximum* value from the children")
+    markdown.div("To calculate the value of a move we can use 'minimax'. Starting at the leaves, if it's the opponent's turn then take the *minimum* value from the children, and if it's our turn take the *maximum* value from the children")
   ))
   .veautifulSlide(<.div(
-    marked("""
+    markdown.div("""
     |## Let's do that for 13 cards
     |
     |It can quickly get bigger than we can think about, but small enough that a computer can do it in milliseconds
