@@ -39,6 +39,10 @@ given markdown:Markup = Markup(marked(_))
         "Heuristics" -> site.add("heuristics",
           Alternative("Slide deck", Deck(() => statespace.heuristics)),
         ),
+
+        "Search strategies" -> site.add("searchStrategies",
+          Alternative("Slide deck", Deck(() => statespace.searchStrategies)),
+        ),
       )
 
     )
