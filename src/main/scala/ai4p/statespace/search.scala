@@ -7,8 +7,8 @@ import ^._
 
 import ai4p.{*, given}
 import Common.*
-import ai4p.statespace.widgets.MontyHall
-import willtap.imperativeTopic.JellyFlood
+
+import willtap.imperativeTopic.{JellyFlood, SearchGrid}
 
 import widgets.*
 
@@ -98,24 +98,26 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |""".stripMargin)
    .veautifulSlide(<.div(
     <.h2("Algorithms on a maze of paths"),
-    JellyFlood(
-        w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
-        mazeString = """|###############
-                        |#..............
-                        |#.############.
-                        |#.#............
-                        |#...#########..
-                        |#.###.......##.
-                        |#.#...####..#..
-                        |#.######....#.#
-                        |#.....#..##.#..
-                        |#.#.#.#..#..##.
-                        |#.#########..#.
-                        |#.....#.....##.
-                        |#.#####.###..#.
-                        |#..#.#..#.#.##.
-                        |#..............""".stripMargin)
-  ))    
+        SearchGrid(
+            w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
+            mazeString = """|###############
+                            |#..............
+                            |#.############.
+                            |#.#............
+                            |#...#########..
+                            |#.###.......##.
+                            |#.#...####..#..
+                            |#.######....#.#
+                            |#.....#..##.#..
+                            |#.#.#.#..#..##.
+                            |#.#########..#.
+                            |#.....#.....##.
+                            |#.#####.###..#.
+                            |#..#.#..#.#.##.
+                            |#..............""".stripMargin,
+            algorithm=SearchGrid.Algorithm.BFS
+    ))
+   )    
   .veautifulSlide(<.div(
     <.h2("Algorithms in a mostly empty maze"),
     <.p("(or, as I like to call it, jelly flood)"),

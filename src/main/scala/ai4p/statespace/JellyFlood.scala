@@ -6,10 +6,13 @@ import org.scalajs.dom.{Element, Node}
 import scala.collection.mutable
 
 import ai4p.{given, *}
-import ai4p.statespace.widgets.{Algorithm, GCell, Pos, SearchState, step}
+import willtap.imperativeTopic.JellyFlood.Square
 
 object JellyFlood {
   val w = 40
+
+  enum Square:
+    case Empty, Bramble, Wall
 
   styleSuite.addGlobalRules(
     """|@keyframes pulse-jelly {
@@ -45,8 +48,92 @@ object JellyFlood {
     " .jelly-cell .start" -> s"background-color: #3b82f6; width: 100%; height: 100%; border-radius: ${w/6}px; color: white; text-align: center; line-height: ${w}px;",
     " .jelly-cell .goal" -> s"background-color: #22c55e; width: 100%; height: 100%; border-radius: ${w/6}px; color: white; text-align: center; line-height: ${w}px;",
     " .jelly-cell .bramble" -> s"background-color: #7c4a1e; width: 100%; height: 100%;",
+    " .jelly-cell .path" -> s"background-color: #7c4a1e; width: 100%; height: 100%;",
+    " .jelly-cell .path.bramble" -> s"background-color: #7c4a1e; width: 100%; height: 100%;",
     " .jelly-algo-bar" -> "display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;"
   ).register()
+
+  
+}
+
+case class JellyFlood(w:Int=8, h:Int=8, startX:Int=0, startY:Int=0, goalX:Int = 7, goalY:Int = 7, mazeString:String = "") extends DHtmlComponent {
+
+  val maze = mutable.Map.empty[(Int, Int), JellyFlood.Square]
+  val distance = mutable.Map.empty[(Int, Int), Int]
+  var tick = 0
+
+  def setSquare(x:Int, y:Int, c:Char):Unit = c match {
+    case '.' => maze((x, y)) = JellyFlood.Square.Empty
+    case '*' => maze((x, y)) = JellyFlood.Square.Bramble
+    case '#' => maze((x, y)) = JellyFlood.Square.Wall
+    case _ => // do nothing
+  }
+
+  def loadFromString(s:String) = {
+    for {
+      (line, y) <- s.linesIterator.zipWithIndex if y < h
+      (char, x) <- line.zipWithIndex if x < w
+    } {
+      setSquare(x, y, char)
+    }
+  }
+
+
+  private def check(p:(Int, Int), dist:Int):Unit = {
+    distance(p) = dist
+    val (x, y) = p
+
+    for {
+      (dx, dy) <- Seq((x+1, y), (x-1, y), (x, y+1), (x, y-1)) if (
+        distance.getOrElse((dx, dy), Int.MaxValue) > dist + 1 &&
+          maze.get(p).contains(JellyFlood.Square.Empty)
+        )
+    } check((dx, dy), dist + 1)
+  }
+
+  def reset(): Unit = {
+    tick = 0
+    maze.clear()
+    distance.clear()
+    loadFromString(mazeString)
+    check((goalX, goalY), 0)
+  }
+
+  reset()
+
+  override protected def render = <.div(^.cls := JellyFlood.jellyGrid,
+    <.div(^.cls := "jelly-grid",
+      for {
+        y <- 0 until h
+      } yield <.div(^.cls := "jelly-row",
+        for {
+          x <- 0 until w
+        } yield {
+          val d =  distance.getOrElse(x -> y, Int.MaxValue)
+
+          <.div(^.cls := "jelly-cell",
+            if (maze.get(x -> y).contains(JellyFlood.Square.Empty)) {
+              if (tick > d) <.div(^.cls := "jelly", d.toString)
+              else if (tick == d) <.div(^.cls := "jelly active", d.toString)
+              else <.div(^.cls := "floor")
+            } else <.div(^.cls := "lava")
+          )
+        }
+      )
+    ),
+    <.div(^.cls := "btn-group",
+      <.button(^.cls := "btn btn-outline-secondary", ^.onClick --> { tick = 0; rerender() }, "Reset"),
+      <.button(^.cls := "btn btn-outline-primary", ^.onClick --> {
+        tick = tick + 1
+        rerender()
+      }, "Step")
+    )
+  )
+}
+
+object SearchGrid {
+  enum Algorithm:
+    case BFS, DFS, GreedyBFS, FloodFill, AStar, Dijkstra
 
   val algoLabel: Algorithm => String = {
     case Algorithm.FloodFill => "Flood Fill"
@@ -56,151 +143,85 @@ object JellyFlood {
     case Algorithm.GreedyBFS => "Greedy BFS"
     case Algorithm.AStar     => "A*"
   }
+
 }
 
-case class JellyFlood(
-  w: Int = 8, h: Int = 8,
-  goalX: Int = 7, goalY: Int = 7,
-  startX: Int = 0, startY: Int = 0,
-  mazeString: String = """|..######
-                          |........
-                          |#.####.#
-                          |#.####.#
-                          |........
-                          |#.####.#
-                          |######..
-                          |######..""".stripMargin,
-  initialAlgo: Algorithm = Algorithm.FloodFill
-) extends DHtmlComponent {
+case class SearchGrid(w:Int=8, h:Int=8, startX:Int=0, startY:Int=0, goalX:Int = 7, goalY:Int = 7, mazeString:String = "", algorithm:SearchGrid.Algorithm) extends DHtmlComponent {
 
-  private val maze    = mutable.Map.empty[(Int, Int), Boolean]
-  private val bramble = mutable.Set.empty[(Int, Int)]
-
-  // step number at which each cell was first discovered; drives tick animation
-  private val visitOrder = mutable.Map.empty[(Int, Int), Int]
-
+  val maze = mutable.Map.empty[(Int, Int), JellyFlood.Square]
+  val paths = mutable.Queue.empty[Seq[(Int, Int)]]
+  var activePath:Option[Seq[(Int, Int)]] = None
   var tick = 0
-  var currentAlgo: Algorithm = initialAlgo
+  
+  // Contains the minimum distance we have seen so far for the square
+  val distance = mutable.Map.empty[(Int, Int), Int]
 
-  private def setSquare(x: Int, y: Int, c: Char): Unit = c match {
-    case '.' => maze((x, y)) = true
-    case '#' => maze((x, y)) = false
-    case '*' => maze((x, y)) = true; bramble += ((x, y))
-    case _   => // do nothing
+  def setSquare(x:Int, y:Int, c:Char):Unit = c match {
+    case '.' => maze((x, y)) = JellyFlood.Square.Empty
+    case '*' => maze((x, y)) = JellyFlood.Square.Bramble
+    case '#' => maze((x, y)) = JellyFlood.Square.Wall
+    case _ => // do nothing
   }
 
-  private def loadFromString(s: String): Unit =
+  def loadFromString(s:String) = {
     for {
       (line, y) <- s.linesIterator.zipWithIndex if y < h
       (char, x) <- line.zipWithIndex if x < w
-    } setSquare(x, y, char)
-
-  private def buildGrid(): IndexedSeq[IndexedSeq[GCell]] =
-    IndexedSeq.tabulate(h, w) { (r, c) =>
-      if !maze.getOrElse((c, r), false) then GCell.Wall
-      else if bramble.contains((c, r))  then GCell.Bramble
-      else GCell.Open
+    } {
+      setSquare(x, y, char)
     }
+  }
+
+  private def step():Unit = {
+    // write this
+  }
 
   def reset(): Unit = {
     tick = 0
     maze.clear()
-    bramble.clear()
-    visitOrder.clear()
+    paths.clear()
+    distance.clear()
     loadFromString(mazeString)
-
-    val grid     = buildGrid()
-    val goalPos  = Pos(goalY, goalX)
-    val startPos = Pos(startY, startX)
-
-    // FloodFill expands from the goal outward; other algorithms search from start.
-    val origin = currentAlgo match {
-      case Algorithm.FloodFill => goalPos
-      case _                   => startPos
-    }
-    // Sentinel goal for FloodFill so it runs until fringe is empty rather than stopping early.
-    val searchGoal = currentAlgo match {
-      case Algorithm.FloodFill => Pos(-1, -1)
-      case _                   => goalPos
-    }
-
-    // Distance-based algorithms animate by actual distance value (wave bands).
-    // Exploration-order algorithms animate by expansion step (one cell per tick).
-    val useDist = currentAlgo match {
-      case Algorithm.FloodFill | Algorithm.BFS | Algorithm.Dijkstra => true
-      case _ => false
-    }
-
-    var state = SearchState.initial(origin)
-    var expansionStep = 0
-
-    if useDist then
-      visitOrder((origin.col, origin.row)) = 0   // origin is at distance 0
-
-    while !state.done && state.fringe.nonEmpty do
-      val prevFringe = state.fringe.toSet
-      val prevDist   = state.dist
-      state = step(state, currentAlgo, grid, searchGoal)
-      expansionStep += 1
-
-      if useDist then
-        for (pos, d) <- state.dist if !prevDist.contains(pos) do
-          visitOrder((pos.col, pos.row)) = d
-      else
-        // The node that was popped = prevFringe − newFringe (new neighbours are not in prevFringe).
-        val expanded = prevFringe -- state.fringe.toSet
-        for pos <- expanded do
-          val key = (pos.col, pos.row)
-          if !visitOrder.contains(key) then visitOrder(key) = expansionStep
+    paths.enqueue(Seq((startX, startY)))
+    activePath = Some(paths.head)
   }
 
   reset()
 
-  override protected def render =
-    <.div(^.cls := JellyFlood.jellyGrid,
-      <.div(^.cls := "jelly-algo-bar",
-        Algorithm.values.map { a =>
-          <.button(
-            ^.cls := (if a == currentAlgo then "btn btn-primary btn-sm" else "btn btn-outline-secondary btn-sm"),
-            ^.onClick --> { currentAlgo = a; reset(); rerender() },
-            JellyFlood.algoLabel(a)
+  override protected def render = <.div(^.cls := JellyFlood.jellyGrid,
+    <.div(^.cls := "jelly-grid",
+      for {
+        y <- 0 until h
+      } yield <.div(^.cls := "jelly-row",
+        for {
+          x <- 0 until w 
+        } yield {
+          val d =  distance.getOrElse(x -> y, Int.MaxValue)
+
+          <.div(^.cls := "jelly-cell",
+            if activePath.contains((x, y)) then 
+              if activePath.map(_.last).contains(x, y) then 
+                <.div(^.cls := "jelly path active", d.toString)
+              else 
+                <.div(^.cls := "jelly path", d.toString)
+            else 
+              if distance.contains((x, y)) then 
+                <.div(^.cls := "jelly", d.toString)
+              else 
+                maze.get((x, y)) match
+                  case Some(Square.Empty) => <.div(^.cls := "floor")
+                  case Some(Square.Bramble) => <.div(^.cls := "bramble")
+                  case _ => <.div(^.cls := "lava")                
           )
         }
-      ),
-      <.div(^.cls := "jelly-grid",
-        for {
-          y <- 0 until h
-        } yield <.div(^.cls := "jelly-row",
-          for {
-            x <- 0 until w
-          } yield {
-            val d          = visitOrder.getOrElse(x -> y, Int.MaxValue)
-            val isGoal     = x == goalX  && y == goalY
-            val isStart    = x == startX && y == startY
-            val isBramble  = bramble.contains(x -> y)
-            val label      = if isGoal then "G" else if isStart then "S" else d.toString
-            <.div(^.cls := "jelly-cell",
-              if maze.getOrElse(x -> y, false) then
-                if d < Int.MaxValue && tick > d then
-                  <.div(^.cls := "jelly", label)
-                else if d < Int.MaxValue && tick == d then
-                  <.div(^.cls := "jelly active", label)
-                else if isGoal then
-                  <.div(^.cls := "goal", "G")
-                else if isStart then
-                  <.div(^.cls := "start", "S")
-                else if isBramble then
-                  <.div(^.cls := "bramble")
-                else
-                  <.div(^.cls := "floor")
-              else <.div(^.cls := "lava")
-            )
-          }
-        )
-      ),
-      <.div(^.cls := "btn-group mt-2",
-        <.button(^.cls := "btn btn-outline-secondary", ^.onClick --> { tick = 0; rerender() }, "Reset"),
-        <.button(^.cls := "btn btn-outline-primary",  ^.onClick --> { tick += 1; rerender() }, "Step")
       )
+    ),
+    <.div(^.cls := "btn-group",
+      <.button(^.cls := "btn btn-outline-secondary", ^.onClick --> { tick = 0; rerender() }, "Reset"),
+      <.button(^.cls := "btn btn-outline-primary", ^.onClick --> {
+        step()
+        rerender()
+      }, "Step")
     )
+  )
 }
