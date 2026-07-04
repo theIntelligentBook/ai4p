@@ -120,8 +120,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
    )    
   .veautifulSlide(<.div(
     <.h2("Algorithms in a mostly empty maze"),
-    <.p("(or, as I like to call it, jelly flood)"),
-    JellyFlood(
+    SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
                         |................
@@ -137,8 +136,8 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |................
                         |................
                         |................
-                        |................""".stripMargin)
-  ))
+                        |................""".stripMargin, SearchGrid.Algorithm.BFS))
+  )
   .markdownSlides(
     """|
        |## Depth-first search
@@ -152,7 +151,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |""".stripMargin)
    .veautifulSlide(<.div(
     <.h2("Algorithms on a maze of paths"),
-    JellyFlood(
+    SearchGrid(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
                         |#..............
@@ -168,12 +167,11 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |#.....#.....##.
                         |#.#####.###..#.
                         |#..#.#..#.#.##.
-                        |#..............""".stripMargin)
+                        |#..............""".stripMargin, SearchGrid.Algorithm.DFS)
   ))    
   .veautifulSlide(<.div(
     <.h2("Algorithms in a mostly empty maze"),
-    <.p("(or, as I like to call it, jelly flood)"),
-    JellyFlood(
+    SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
                         |................
@@ -189,7 +187,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |................
                         |................
                         |................
-                        |................""".stripMargin)
+                        |................""".stripMargin, SearchGrid.Algorithm.DFS)
   ))
   .markdownSlides(
     """|
@@ -203,30 +201,29 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |So, we've introduced a "bramble" square that you can pass through but only slowly to see the difference
        |
        |""".stripMargin)
-   .veautifulSlide(<.div(
+    .veautifulSlide(<.div(
     <.h2("Algorithms on a maze of paths"),
-    JellyFlood(
+    SearchGrid(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
-                        |#..............
+                        |#.**...........
                         |#.############.
                         |#.#............
                         |#...#########..
                         |#*###.......##.
-                        |#.#...####..#..
-                        |#.######....#.#
+                        |#*#...####..#..
+                        |#*######....#.#
                         |#.....#..##.#..
                         |#.#.#.#..#..##.
                         |#.#########..#.
                         |#.....#.....##.
                         |#.#####.###..#.
                         |#..#.#..#.#.##.
-                        |#..............""".stripMargin)
+                        |#..............""".stripMargin, SearchGrid.Algorithm.Dijkstra)
   ))    
   .veautifulSlide(<.div(
     <.h2("Algorithms in a mostly empty maze"),
-    <.p("(or, as I like to call it, jelly flood)"),
-    JellyFlood(
+    SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
                         |................
@@ -242,7 +239,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |................
                         |................
                         |................
-                        |................""".stripMargin)
+                        |................""".stripMargin, SearchGrid.Algorithm.Dijkstra)
   ))
   .markdownSlides(
     """|
@@ -260,28 +257,27 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |""".stripMargin)
    .veautifulSlide(<.div(
     <.h2("Algorithms on a maze of paths"),
-    JellyFlood(
+    SearchGrid(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
                         |#..............
                         |#.############.
-                        |#.#...*****....
+                        |#.#............
                         |#...#########..
-                        |#*###.......##.
-                        |#*#...####..#..
-                        |#*######....#.#
+                        |#.###.......##.
+                        |#.#...####..#..
+                        |#.######....#.#
                         |#.....#..##.#..
                         |#.#.#.#..#..##.
                         |#.#########..#.
                         |#.....#.....##.
                         |#.#####.###..#.
                         |#..#.#..#.#.##.
-                        |#..............""".stripMargin)
+                        |#..............""".stripMargin, SearchGrid.Algorithm.AStar)
   ))    
   .veautifulSlide(<.div(
     <.h2("Algorithms in a mostly empty maze"),
-    <.p("(or, as I like to call it, jelly flood)"),
-    JellyFlood(
+    SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
                         |................
@@ -297,7 +293,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |................
                         |................
                         |................
-                        |................""".stripMargin)
+                        |................""".stripMargin, SearchGrid.Algorithm.AStar)
   ))
   .markdownSlide(willCcBy)
   .renderSlides
