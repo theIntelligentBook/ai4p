@@ -35,17 +35,9 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |We need a systematic way of exploring the squares of the maze to find which ones lead to the miidle.
        |Which way do we go first?
        |
-       |---
-       |
-       |## Flood-fill
-       |
-       |Imagine we were pouring treacle onto the goal square. Think about where that treacle would flow.
-       |
-       |The direction it reaches us from first is the shortest path.
-       |
        |""".stripMargin)
    .veautifulSlide(<.div(
-    <.h2("Algorithms on a maze of paths"),
+    <.h2("Following the left-hand wall won't work"),
     JellyFlood(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
@@ -63,41 +55,20 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |#.#####.###..#.
                         |#..#.#..#.#.##.
                         |#..............""".stripMargin)
-  ))    
-  .veautifulSlide(<.div(
-    <.h2("Algorithms in a mostly empty maze"),
-    <.p("(or, as I like to call it, jelly flood)"),
-    JellyFlood(
-        w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
-        mazeString = """|................
-                        |................
-                        |................
-                        |...........#....
-                        |...........#....
-                        |...........#....
-                        |..##########....
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................""".stripMargin)
-  ))
+  )) 
   .markdownSlides(
     """|
        |## Breadth-first search
        |
-       |* Works like flood-fill, but from the start instead of the goal.
+       |* At each square, we have to consdier its neighbours
        |
-       |* It gives you the distance to every square, but you have to remember the path as you go
+       |* And their neighbours...
        |
-       |* (Just remembering the distance won't tell you which way to go at corners)
+       |Breadth first search explores each path to the same distance, expanding step by step
        |
        |""".stripMargin)
    .veautifulSlide(<.div(
-    <.h2("Algorithms on a maze of paths"),
+    <.h2("Breadth First Search"),
         SearchGrid(
             w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
             mazeString = """|###############
@@ -119,7 +90,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
     ))
    )    
   .veautifulSlide(<.div(
-    <.h2("Algorithms in a mostly empty maze"),
+    <.h2("Breadth First Search"),
     SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
@@ -142,15 +113,12 @@ val searchStrategies = DeckBuilder(1920, 1080)
     """|
        |## Depth-first search
        |
-       |* Works like flood-fill, but from the start instead of the goal.
+       |Depth First Search pursues each possibility to exhaustion before moving on to the next one
        |
-       |* It gives you the distance to every square, but you have to remember the path as you go
-       |
-       |* (Just remembering the distance won't tell you which way to go at corners)
        |
        |""".stripMargin)
    .veautifulSlide(<.div(
-    <.h2("Algorithms on a maze of paths"),
+    <.h2("Depth First Searchs"),
     SearchGrid(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
@@ -170,7 +138,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |#..............""".stripMargin, SearchGrid.Algorithm.DFS)
   ))    
   .veautifulSlide(<.div(
-    <.h2("Algorithms in a mostly empty maze"),
+    <.h2("Depth First Search"),
     SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
         mazeString = """|................
@@ -202,7 +170,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |
        |""".stripMargin)
     .veautifulSlide(<.div(
-    <.h2("Algorithms on a maze of paths"),
+    <.h2("Dijkstra's Algorithm"),
     SearchGrid(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
@@ -222,24 +190,72 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |#..............""".stripMargin, SearchGrid.Algorithm.Dijkstra)
   ))    
   .veautifulSlide(<.div(
-    <.h2("Algorithms in a mostly empty maze"),
+    <.h2("Dijkstra's Algorithm"),
     SearchGrid(
         w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
-        mazeString = """|................
-                        |................
-                        |................
-                        |...........#....
-                        |...........#....
-                        |...........#....
-                        |..##########....
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................""".stripMargin, SearchGrid.Algorithm.Dijkstra)
+        mazeString = """|........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |...............""".stripMargin, SearchGrid.Algorithm.Dijkstra)
+  ))
+  .markdownSlides(
+    """|
+       |## Greedy Breadth First Search
+       |
+       |Greedy Breadth First search uses a heuristic to guess the remaining cost, and
+       |picks paths that are closest to the goal
+       |
+       |""".stripMargin)
+    .veautifulSlide(<.div(
+    <.h2("Greedy Breadth First Search"),
+    SearchGrid(
+        w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
+        mazeString = """|###############
+                        |#.**...........
+                        |#.############.
+                        |#.#............
+                        |#...#########..
+                        |#*###.......##.
+                        |#*#...####..#..
+                        |#*######....#.#
+                        |#.....#..##.#..
+                        |#.#.#.#..#..##.
+                        |#.#########..#.
+                        |#.....#.....##.
+                        |#.#####.###..#.
+                        |#..#.#..#.#.##.
+                        |#..............""".stripMargin, SearchGrid.Algorithm.GreedyBFS)
+  ))    
+  .veautifulSlide(<.div(
+    <.h2("Greedy Breadth First Search"),
+    SearchGrid(
+        w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
+        mazeString = """|........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |........***....
+                        |...............""".stripMargin, SearchGrid.Algorithm.GreedyBFS)
   ))
   .markdownSlides(
     """|
@@ -256,8 +272,96 @@ val searchStrategies = DeckBuilder(1920, 1080)
        |
        |""".stripMargin)
    .veautifulSlide(<.div(
-    <.h2("Algorithms on a maze of paths"),
+    <.h2("A*"),
     SearchGrid(
+        w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
+        mazeString = """|###############
+                        |#..............
+                        |#.############.
+                        |#.#..*****.....
+                        |#...#########..
+                        |#*###.......##.
+                        |#*#...####..#..
+                        |#*######....#.#
+                        |#.....#..##.#..
+                        |#.#.#.#..#..##.
+                        |#.#########..#.
+                        |#.....#.....##.
+                        |#.#####.###..#.
+                        |#..#.#..#.#.##.
+                        |#..............""".stripMargin, SearchGrid.Algorithm.AStar)
+  ))    
+  .veautifulSlide(<.div(
+    <.h2("*"),
+    SearchGrid(
+        w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
+        mazeString = """|...............
+                        |...............
+                        |...............
+                        |...............
+                        |...............
+                        |...............
+                        |.....*******...
+                        |.....*******...
+                        |.....*******...
+                        |.....*******...
+                        |...............
+                        |...............
+                        |...............
+                        |...............
+                        |...............""".stripMargin, SearchGrid.Algorithm.AStar)
+  ))
+  .markdownSlides(
+    """|
+       |## But we have a mouse...
+       |
+       |In Micromouse, though, we've got a robot inside the maze, exploring while it moves. 
+       |
+       |Travelling from one path to another would be expensive.
+       |
+       |So instead, most early mice used a simple algorithm called "flood fill" that also 
+       |lets us talk about memoisation.
+       |
+       |Rather than remeber
+       |
+       |
+       |""".stripMargin)
+    .veautifulSlide(<.div(
+        <.h2("A*"),
+        SearchGrid(
+            w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
+            mazeString = """|###############
+                            |#..............
+                            |#.############.
+                            |#.#..*****.....
+                            |#...#########..
+                            |#*###.......##.
+                            |#*#...####..#..
+                            |#*######....#.#
+                            |#.....#..##.#..
+                            |#.#.#.#..#..##.
+                            |#.#########..#.
+                            |#.....#.....##.
+                            |#.#####.###..#.
+                            |#..#.#..#.#.##.
+                            |#..............""".stripMargin, SearchGrid.Algorithm.AStar)
+    ))          
+    .markdownSlides(
+    """|
+       |## Flood-fill
+       |
+       |So instead, most early mice used a simple algorithm called "flood fill" that also 
+       |lets us talk about memoisation.
+       |
+       |Rather than keep track of a set of paths, it'd keep track of how far it thinks every
+       |square is from the goal.
+       |
+       |Imagine we were pouring treacle onto the goal square. Think about where that treacle would flow.
+       |
+       |""".stripMargin)
+   .veautifulSlide(<.div(
+    <.h2("Flood-fill"),
+    JellyFlood(
         w = 16, h = 16, startX=1, startY=1, goalX=8, goalY=8, 
         mazeString = """|###############
                         |#..............
@@ -273,27 +377,7 @@ val searchStrategies = DeckBuilder(1920, 1080)
                         |#.....#.....##.
                         |#.#####.###..#.
                         |#..#.#..#.#.##.
-                        |#..............""".stripMargin, SearchGrid.Algorithm.AStar)
+                        |#..............""".stripMargin)
   ))    
-  .veautifulSlide(<.div(
-    <.h2("Algorithms in a mostly empty maze"),
-    SearchGrid(
-        w = 15, h = 15, startX=5, startY=5, goalX=14, goalY=14, 
-        mazeString = """|................
-                        |................
-                        |................
-                        |...........#....
-                        |...........#....
-                        |...........#....
-                        |..##########....
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................
-                        |................""".stripMargin, SearchGrid.Algorithm.AStar)
-  ))
   .markdownSlide(willCcBy)
   .renderSlides

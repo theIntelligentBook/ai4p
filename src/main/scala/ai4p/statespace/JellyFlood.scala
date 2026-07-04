@@ -47,6 +47,7 @@ object JellyFlood {
     " .jelly-cell .jelly" -> s"background-color: darkgreen; width: 100%; height: 100%; border-radius: ${w/6}px; color: white; text-align: center; line-height: ${w}px;",
     " .jelly-cell .jelly.active" -> "animation: pulse-jelly 2s infinite;",
     " .jelly-cell .visited" -> s"background-color: #3b82f6; width: 100%; height: 100%; color: white; text-align: center; line-height: ${w}px; font-size: ${w*2/3}px;",
+    " .jelly-cell .visited.bramble" -> s"background-color: #7c4a1e; width: 100%; height: 100%; color: white; text-align: center; line-height: ${w}px; font-size: ${w*2/3}px;",
     " .jelly-cell .path" -> s"background-color: #f59e0b; width: 100%; height: 100%;",
     " .jelly-cell .path.bramble" -> s"background-color: #b45309; width: 100%; height: 100%;",
     " .jelly-cell .path.active" -> s"background-color: #f97316; width: 100%; height: 100%; animation: pulse-jelly 1s infinite;",
@@ -258,8 +259,9 @@ case class SearchGrid(w:Int=8, h:Int=8, startX:Int=0, startY:Int=0, goalX:Int=7,
             else if onActivePath then
               if isActiveHead then <.div(^.cls := (if isBramble then "path active bramble" else "path active"), bestCost(pos).toString)
               else <.div(^.cls := (if isBramble then "path bramble" else "path"), bestCost(pos).toString)
+            else if bestCost.contains(pos) then
+              <.div(^.cls := (if isBramble then "visited bramble" else "visited"), bestCost(pos).toString)
             else if isBramble then <.div(^.cls := "bramble")
-            else if bestCost.contains(pos) then <.div(^.cls := "visited", bestCost(pos).toString)
             else <.div(^.cls := "floor")
           )
         }
