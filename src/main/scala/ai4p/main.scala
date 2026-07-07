@@ -43,6 +43,15 @@ given markdown:Markup = Markup(marked(_))
         "Search strategies" -> site.add("searchStrategies",
           Alternative("Slide deck", Deck(() => statespace.searchStrategies)),
         ),
+      ),
+
+      "Learning by example" -> site.Toc(
+        "Intro" -> site.addPage("fromexamples", fromexamples.fromExamplesIntro),
+
+        "Salience" -> site.add("salience",
+          Alternative("Slide deck", Deck(() => fromexamples.salience)),
+        ),
+
       )
 
     )
