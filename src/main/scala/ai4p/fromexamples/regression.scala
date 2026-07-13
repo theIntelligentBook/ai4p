@@ -12,6 +12,10 @@ import site.given
 import scala.util.Random
 
 import widgets.*  
+import coderunner.JSCodable
+import canvasland.CanvasLand
+import canvasland.LineTurtle
+import coderunner.PrefabCodable
 
 object LinearRegressionWidget {
 
@@ -236,6 +240,16 @@ case class LogisticRegressionWidget() extends DHtmlComponent {
         s"${toSvgX(x)},${toSvgY(y)}"
       }.mkString(" ")
 
+    val boundaryLine = boundaryX match
+      case Some(bx) if bx >= 0 && bx <= 1 =>
+        SVG.line(
+          ^.attr("x1") := toSvgX(bx), ^.attr("y1") := toSvgY(0.0),
+          ^.attr("x2") := toSvgX(bx), ^.attr("y2") := toSvgY(1.0),
+          ^.attr("stroke") := "#f59e0b", ^.attr("stroke-width") := "1.5",
+          ^.attr("stroke-dasharray") := "6 3"
+        )
+      case _ => SVG.g()
+
     <.div(^.cls := styling.className,
       SVG.svg(
         ^.attr("width")  := w,
@@ -279,28 +293,19 @@ case class LogisticRegressionWidget() extends DHtmlComponent {
         ),
 
         // Decision boundary vertical line
-        boundaryX match 
-          case Some(bx) if bx >= 0 && bx <= 1 =>
-            SVG.line(
-              ^.attr("x1") := toSvgX(bx), ^.attr("y1") := toSvgY(0.0),
-              ^.attr("x2") := toSvgX(bx), ^.attr("y2") := toSvgY(1.0),
-              ^.attr("stroke") := "#f59e0b", ^.attr("stroke-width") := "1.5",
-              ^.attr("stroke-dasharray") := "6 3"
-            )
-          case _ => SVG.g(
+        boundaryLine,
 
-            // Data points — class 0 (red circles), class 1 (blue circles)
-            // drawn at y=0.05 and y=0.95 on the axis so they don't overlap the curve
-            for (px, cls) <- points yield
-              SVG.circle(
-                ^.attr("cx") := toSvgX(px),
-                ^.attr("cy") := toSvgY(if cls == 1 then 0.95 else 0.05),
-                ^.attr("r")  := "6",
-                ^.attr("fill")         := (if cls == 1 then "#3b82f6" else "#ef4444"),
-                ^.attr("stroke")       := "white",
-                ^.attr("stroke-width") := "1.5",
-                ^.attr("opacity")      := "0.85"
-              )
+        // Data points — class 0 (red circles), class 1 (blue circles)
+        // drawn at y=0.05 and y=0.95 on the axis so they don't overlap the curve
+        for (px, cls) <- points yield
+          SVG.circle(
+            ^.attr("cx") := toSvgX(px),
+            ^.attr("cy") := toSvgY(if cls == 1 then 0.95 else 0.05),
+            ^.attr("r")  := "6",
+            ^.attr("fill")         := (if cls == 1 then "#3b82f6" else "#ef4444"),
+            ^.attr("stroke")       := "white",
+            ^.attr("stroke-width") := "1.5",
+            ^.attr("opacity")      := "0.85"
           )
       ),
 
@@ -332,7 +337,14 @@ case class LogisticRegressionWidget() extends DHtmlComponent {
     )
 }
 
-val regression = DeckBuilder(1920, 1080) 
+val stabilityStyling = Styling(
+  """|display: block;
+     |""".stripMargin
+).modifiedBy(
+  " > div:last-child" -> "display: flex; flex-direction: row; align-items: flex-start; gap: 16px; flex-wrap: wrap;"
+).register()
+
+val regression = DeckBuilder(1920, 1080)
   .markdownSlide(
     """
       |# Regression
@@ -380,6 +392,7 @@ val regression = DeckBuilder(1920, 1080)
     |  - now take the mean 
     |
     |Now we just have to find the line that has the lowest mean squared error. 
+    |
     |For small amounts of data, that can just be done as an equation
     |
     |""".stripMargin)
@@ -389,7 +402,7 @@ val regression = DeckBuilder(1920, 1080)
   ))
     .markdownSlides(
     """
-    |## Gradient descent
+    |## Successive approximation
     |
     |When the data starts getting too big, the equation becomes too big to just "work out".
     |
@@ -401,15 +414,213 @@ val regression = DeckBuilder(1920, 1080)
     |
     |* Take another guess in that direction.
     |
+    |When we are iteratively "getting it wrong and correcting ourselves", we want to make sure that
+    |our corrections *converge*. 
     |
+    |I'm going to liken this to stability in a control system... 
     |
+    |---
     |
+    |## Stability
+    |
+    |We're going to use a tiny line-following robot, with just one sensor.
+    |
+    |We want it to follow the edge of a dark line.
+    |
+    |We'll see what happens when we move the sensor
     |
     |
     |""".stripMargin)
-    .veautifulSlide(<.div(
-    <.h2("Linear regression"),
+     .veautifulSlide(<.div(^.cls := stabilityStyling.className,
+      <.h2("Sensor under the robot"),
+      // markdown.div(
+      //   """A closed loop control system can become unstable. A quick demonstration of this is what happens if we
+      //     |*move the line sensor behind the robot*. Fortunately, having the line sensor *in front* of the robot gives
+      //     |us some "damping" in our control system (the oscillations get smaller).
+      //     |""".stripMargin),
+      PrefabCodable(
+        """addLineSensor(0, 0, 255, 255, 0) // one sensor, under the robot
+          |
+          |setColour("blue")
+          |setCompositeMode("lighten")
+          |
+          |while (true) {
+          |    let l = readSensor(0); // how bright is our sensor?
+          |    
+          |    if (l < 0.5) {
+          |        // dark. We're right of the edge, so steer left
+          |        left(5);   
+          |    } else  {
+          |        // light. We're left of the edge, so steer right
+          |        right(5);  
+          |    }
+          |
+          |    forward(1);
+          |}
+          |""".stripMargin,
+      CanvasLand()(
+        fieldSize=(920 -> 640),
+        viewSize=(920 -> 640),
+        r = LineTurtle(120, 90) { r => },
+        setup = { (c:CanvasLand) =>
+          c.fillCanvas("rgb(200,180,0)")
+          c.drawGrid("rgb(200,240,240)", 25, 1)
+          c.withCanvasContext { ctx =>
+            ctx.strokeStyle = "rgb(60,60,60)"
+            ctx.lineWidth = 40
+            ctx.beginPath()
+            ctx.moveTo(100, 100)
+            ctx.lineTo(770, 100)
+            ctx.lineTo(770, 540)
+            ctx.bezierCurveTo(670, 540, 150, 200, 150, 100)
+            ctx.stroke()
+          }
+        }
+      ),
+      codeStyle = Some(
+        "margin: 0; width: 500px; max-height: 640px; overflow: auto; " +
+        "font-size: 0.8rem; line-height: 1.4; background: #1e1e1e; color: #f1f1f1; " +
+        "padding: 12px; border-radius: 6px; white-space: pre-wrap;"
+      ))
+    ))
+    .veautifulSlide(<.div(^.cls := stabilityStyling.className,
+      <.h2("Sensor 1px in front of the robot - stable and damped"),
+      // markdown.div(
+      //   """A closed loop control system can become unstable. A quick demonstration of this is what happens if we
+      //     |*move the line sensor behind the robot*. Fortunately, having the line sensor *in front* of the robot gives
+      //     |us some "damping" in our control system (the oscillations get smaller).
+      //     |""".stripMargin),
+      PrefabCodable(
+        """addLineSensor(1, 0, 255, 255, 0) // move the sensor 1px in front
+          |
+          |setColour("blue")
+          |setCompositeMode("lighten")
+          |
+          |while (true) {
+          |    let l = readSensor(0); // how bright is our sensor?
+          |    
+          |    if (l < 0.5) {
+          |        // dark. We're right of the edge, so steer left
+          |        left(5);   
+          |    } else  {
+          |        // light. We're left of the edge, so steer right
+          |        right(5);  
+          |    }
+          |
+          |    forward(1);
+          |}
+          |""".stripMargin,
+      CanvasLand()(
+        fieldSize=(920 -> 640),
+        viewSize=(920 -> 640),
+        r = LineTurtle(120, 90) { r => },
+        setup = { (c:CanvasLand) =>
+          c.fillCanvas("rgb(200,180,0)")
+          c.drawGrid("rgb(200,240,240)", 25, 1)
+          c.withCanvasContext { ctx =>
+            ctx.strokeStyle = "rgb(60,60,60)"
+            ctx.lineWidth = 40
+            ctx.beginPath()
+            ctx.moveTo(100, 100)
+            ctx.lineTo(770, 100)
+            ctx.lineTo(770, 540)
+            ctx.bezierCurveTo(670, 540, 150, 200, 150, 100)
+            ctx.stroke()
+          }
+        }
+      ),
+      codeStyle = Some(
+        "margin: 0; width: 500px; max-height: 640px; overflow: auto; " +
+        "font-size: 0.8rem; line-height: 1.4; background: #1e1e1e; color: #f1f1f1; " +
+        "padding: 12px; border-radius: 6px; white-space: pre-wrap;"
+      ))
+    ))
+    .veautifulSlide(<.div(^.cls := stabilityStyling.className,
+      <.h2("Sensor 1px behind the robot - unstable"),
+      // markdown.div(
+      //   """A closed loop control system can become unstable. A quick demonstration of this is what happens if we
+      //     |*move the line sensor behind the robot*. Fortunately, having the line sensor *in front* of the robot gives
+      //     |us some "damping" in our control system (the oscillations get smaller).
+      //     |""".stripMargin),
+      PrefabCodable(
+        """addLineSensor(-1, 0, 255, 255, 0) // move the sensor 1px behind
+          |
+          |setColour("blue")
+          |setCompositeMode("lighten")
+          |
+          |while (true) {
+          |    let l = readSensor(0); // how bright is our sensor?
+          |    
+          |    if (l < 0.5) {
+          |        // dark. We're right of the edge, so steer left
+          |        left(5);   
+          |    } else  {
+          |        // light. We're left of the edge, so steer right
+          |        right(5);  
+          |    }
+          |
+          |    forward(1);
+          |}
+          |""".stripMargin,
+      CanvasLand()(
+        fieldSize=(920 -> 640),
+        viewSize=(920 -> 640),
+        r = LineTurtle(120, 80) { r => },
+        setup = { (c:CanvasLand) =>
+          c.fillCanvas("rgb(200,180,0)")
+          c.drawGrid("rgb(200,240,240)", 25, 1)
+          c.withCanvasContext { ctx =>
+            ctx.strokeStyle = "rgb(60,60,60)"
+            ctx.lineWidth = 40
+            ctx.beginPath()
+            ctx.moveTo(100, 100)
+            ctx.lineTo(770, 100)
+            ctx.lineTo(770, 540)
+            ctx.bezierCurveTo(670, 540, 150, 200, 150, 100)
+            ctx.stroke()
+          }
+        }
+      ),
+      codeStyle = Some(
+        "margin: 0; width: 500px; max-height: 640px; overflow: auto; " +
+        "font-size: 0.8rem; line-height: 1.4; background: #1e1e1e; color: #f1f1f1; " +
+        "padding: 12px; border-radius: 6px; white-space: pre-wrap;"
+      ))
+    ))
+  .veautifulSlide(<.div(
+    <.h2("Gradient descent"),
+    markdown.div("""|In linear regression, we have two variables. The slope and the offset of the line.
+                  |Let's just approximate one of them for now. 
+                  |
+                  |How *bad* our fit is depends on our loss function (the mean squared error).
+                  |Mathematically, if we "differentiate" the loss function, we get an equation for its gradient (slope at any point).
+                  |
+                  |In "gradient descent", we say:
+                  |
+                  |* Our next guess will move in the direction of the gradient (like we're rolling downhill)
+                  |* We'll step by some value (the "learning rate") multiplied by that gradient.
+                  |
+                  |""".stripMargin),
     <.p(GradientDescent())
+  ))
+  .veautifulSlide(<.div(
+    <.h2("Converging and diverging"),
+    markdown.div("""|If we make our learning rate too big (step too far), we can go unstable. 
+                    | We find we've shot so far past the middle we've got worse, like the unstable robot.
+                  |""".stripMargin),
+    <.p(GradientDescent())
+  ))
+  .veautifulSlide(<.div(
+    <.h2("Logistic regression"),
+    markdown.div("""|Sometimes, we're trying to predict something that's *true* or *false* rather than having a continuous value.
+                    |
+                    |E.g. "Will you fail an exam?"
+                    |
+                    |In these cases, we try to fit a function to the *probability* that you'll be in one of the classes (failing or passing)
+                    |
+                    |Because probabilities are always between 0 and 1, they don't fit a linear equation. So instead we fit it to a "sigmoid" 
+                  |""".stripMargin),
+    <.p(LogisticRegressionWidget())
   ))
   .markdownSlide(willCcBy)
   .renderSlides
