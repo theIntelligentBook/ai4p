@@ -39,6 +39,9 @@ object Intro {
            |1. [State spaces](#/pages/statespaces), in which we look at some classical AI for very small games
            |   and start to think about searching among our options, looking ahead at their consequences,
            |   and ascribing a value to outcomes.
+           |
+           |2. [Learning from examples](#/pages/fromexamples), in which we introduce the idea of machine learning
+           |
            |""".stripMargin
       )
     ),

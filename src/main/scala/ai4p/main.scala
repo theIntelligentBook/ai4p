@@ -52,6 +52,9 @@ given markdown:Markup = Markup(marked(_))
           Alternative("Slide deck", Deck(() => fromexamples.salience)),
         ),
 
+        "Regression" -> site.add("regression",
+          Alternative("Slide deck", Deck(() => fromexamples.regression)),
+        ),
       )
 
     )

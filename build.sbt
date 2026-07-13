@@ -12,12 +12,18 @@ lazy val ai4p = project.in(file("."))
   .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
   .settings(
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
       "com.wbillingsley" %%% "doctacular" % "0.3.0",
     ),
 
     // For java.security.SecureRandom which is used in UUID generation
     libraryDependencies += ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+
+    libraryDependencies ++= Seq(
+      "com.github.wbillingsley" % "lavamaze" % "master-SNAPSHOT", // Need to single-% as it's a top-level jitpack project
+      "com.github.theintelligentbook" % "circuitsup" % "master-SNAPSHOT"
+    ),
 
     // This is an application with a main method
     scalaJSUseMainModuleInitializer := true,

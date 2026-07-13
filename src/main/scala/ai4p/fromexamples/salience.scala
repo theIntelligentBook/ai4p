@@ -82,7 +82,7 @@ case class HappyGame() extends DHtmlComponent {
     }
 
     override def render = {
-        val head :: tail = grids.value
+        val head :: tail = grids.value : @unchecked // We know the list isn't empty from how it's initialised
 
         <.div(^.style := "overflow-y: auto; max-height: 900px;",
             renderGrid(head, state.value),
