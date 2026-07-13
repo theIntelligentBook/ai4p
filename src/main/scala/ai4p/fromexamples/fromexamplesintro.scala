@@ -14,9 +14,9 @@ val fromExamplesIntro = <.div(
     |Sometimes, we'll want the computer to learn from things it has seen. i.e. In this topic we'll talk a little bit about machine learning.
     |
     |In this topic we'll see
-    |* A general introduction to machine learning and the idea of salience - what information turns out to be important and how can we know?
+    |* A general introduction to machine learning and the idea of [salience](#/decks/salience/0) - what information turns out to be important and how can we know?
+    |* [Regression](#/decks/regression/0) and trying to determine how much impact something has on some data
     |* Grouping things together and clustering
-    |* Regression and trying to determine how much impact something has on some data
     |
     |We'll also have a philosophical aside
     |* Another way of looking at bias 

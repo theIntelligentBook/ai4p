@@ -22,23 +22,11 @@ object GradientDescent {
   val yMin = -1.0
   val yMax = 26.0
 
-  /** The loss surface: f(x) = x^2 */
-  def f(x: Double): Double = x * x
-
-  /** Derivative: f'(x) = 2x */
-  def df(x: Double): Double = 2.0 * x
-
   def toSvgX(x: Double): Double =
     pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad)
 
   def toSvgY(y: Double): Double =
     (h - pad) - (y - yMin) / (yMax - yMin) * (h - 2 * pad)
-
-  def curvePoints(steps: Int = 200): Seq[(Double, Double)] =
-    (0 to steps).map { i =>
-      val x = xMin + (xMax - xMin) * i.toDouble / steps
-      (x, f(x))
-    }
 
   /** Clamp a value into the visible data range for drawing */
   def clampX(x: Double): Double = math.max(xMin - 1, math.min(xMax + 1, x))
@@ -57,16 +45,47 @@ object GradientDescent {
     " .gd-status.oscillating" -> "background: #fef9c3; color: #854d0e;",
     " .gd-status.diverging" -> "background: #fee2e2; color: #991b1b;",
     " .gd-label" -> "font-size: 0.85rem; color: #666;",
-    " input[type=range]" -> "width: 120px;"
+    " input[type=range]" -> "width: 120px;",
+    " .gd-legend" -> "font-size: 0.8rem; color: #555; display: flex; gap: 14px; flex-wrap: wrap; margin-top: 2px;",
+    " .gd-legend-item" -> "display: inline-flex; align-items: center;",
+    " .gd-swatch" -> "display: inline-block; width: 12px; height: 4px; border-radius: 2px; margin-right: 5px;"
   ).register()
 }
 
 case class GradientDescent(
   initialX: Double = 3.5,
-  initialLR: Double = 0.1
+  initialLR: Double = 0.1,
+  /** How much to flatten the bowl near its minimum, from 0 (plain x^2) up to
+    * just under 1 (very flat middle). Use e.g. 0.6 to show ridge regression:
+    * unlike scaling the whole curve, this only softens the region around the
+    * minimum while matching the plain f(x) = x^2 curve out at the edges, so
+    * the two curves visibly coincide away from the middle. */
+  flattenAmount: Double = 0.0,
+  /** Roughly how wide (in x) the flattened region around the minimum is. */
+  flattenWidth: Double = 1.5
 ) extends DHtmlComponent {
 
   import GradientDescent._
+
+  private val r2 = flattenWidth * flattenWidth
+
+  /** The loss surface: x^2, softened near x=0 by flattenAmount and tapering
+    * back to matching x^2 once |x| grows past ~flattenWidth. */
+  def f(x: Double): Double =
+    val x2 = x * x
+    x2 - flattenAmount * x2 * r2 / (r2 + x2)
+
+  /** Derivative of f, matching the rational flattening term above. */
+  def df(x: Double): Double =
+    val x2 = x * x
+    val d = r2 + x2
+    2.0 * x * (1.0 - flattenAmount * r2 * r2 / (d * d))
+
+  def curvePoints(steps: Int = 200): Seq[(Double, Double)] =
+    (0 to steps).map { i =>
+      val x = xMin + (xMax - xMin) * i.toDouble / steps
+      (x, f(x))
+    }
 
   var lr: Double = initialLR
   var currentX: Double = initialX
@@ -121,6 +140,12 @@ case class GradientDescent(
     val curve = curvePoints()
     val polyStr = curve.map((x, y) => s"${toSvgX(x)},${toSvgY(y)}").mkString(" ")
 
+    // Decompose into data loss (x^2) and the ridge penalty added on top of it,
+    // so the combined curve above can be explained as their sum.
+    val showPenaltyBreakdown = flattenAmount != 0.0
+    val dataLossPolyStr = curve.map((x, _) => s"${toSvgX(x)},${toSvgY(x * x)}").mkString(" ")
+    val penaltyPolyStr = curve.map((x, y) => s"${toSvgX(x)},${toSvgY(y - x * x)}").mkString(" ")
+
     val yAtX = f(currentX)
     val slope = df(currentX)
     val inView = math.abs(currentX) <= xMax + 1
@@ -172,7 +197,23 @@ case class GradientDescent(
                  ^.attr("text-anchor") := "middle", ^.attr("font-size") := "13",
                  ^.attr("fill") := "#666", ^.attr("transform") := s"rotate(-90,12,${h / 2})", "f(x)"),
 
-        // Loss curve
+        // Data loss and penalty breakdown (dashed), shown only when there's a penalty to explain
+        if showPenaltyBreakdown then
+          SVG.g(
+            SVG.polyline(
+              ^.attr("points") := dataLossPolyStr,
+              ^.attr("fill") := "none", ^.attr("stroke") := "#94a3b8",
+              ^.attr("stroke-width") := "2", ^.attr("stroke-dasharray") := "6 3"
+            ),
+            SVG.polyline(
+              ^.attr("points") := penaltyPolyStr,
+              ^.attr("fill") := "none", ^.attr("stroke") := "#f97316",
+              ^.attr("stroke-width") := "2", ^.attr("stroke-dasharray") := "6 3"
+            )
+          )
+        else <.span(),
+
+        // Loss curve (data loss + penalty, if any)
         SVG.polyline(
           ^.attr("points") := polyStr,
           ^.attr("fill") := "none", ^.attr("stroke") := "#3b82f6",
@@ -240,11 +281,21 @@ case class GradientDescent(
       ),
 
       <.div(^.cls := "gd-info",
-        if math.abs(currentX) < 1e6 then
-          f"x = $currentX%.4f,  f(x) = $yAtX%.4f,  f′(x) = $slope%.4f   (step ${history.size - 1})"
-        else
-          s"x has diverged to ${if currentX > 0 then "+∞" else "−∞"}   (step ${history.size - 1})"
+        (if showPenaltyBreakdown then "loss = data loss + penalty" else "f(x) = x²") + "   —   " + (
+          if math.abs(currentX) < 1e6 then
+            f"x = $currentX%.4f,  f(x) = $yAtX%.4f,  f′(x) = $slope%.4f   (step ${history.size - 1})"
+          else
+            s"x has diverged to ${if currentX > 0 then "+∞" else "−∞"}   (step ${history.size - 1})"
+        )
       ),
+
+      if showPenaltyBreakdown then
+        <.div(^.cls := "gd-legend",
+          <.span(^.cls := "gd-legend-item", <.span(^.cls := "gd-swatch", ^.style := "background: #3b82f6;"), " combined loss (what GD follows)"),
+          <.span(^.cls := "gd-legend-item", <.span(^.cls := "gd-swatch", ^.style := "background: #94a3b8;"), " data loss (x²)"),
+          <.span(^.cls := "gd-legend-item", <.span(^.cls := "gd-swatch", ^.style := "background: #f97316;"), " ridge penalty")
+        )
+      else <.span(),
 
       <.div(^.cls := "gd-controls",
         <.button(^.cls := "btn btn-outline-primary btn-sm",

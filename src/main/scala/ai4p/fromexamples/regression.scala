@@ -402,11 +402,42 @@ val regression = DeckBuilder(1920, 1080)
   ))
     .markdownSlides(
     """
+    |
+    |## Mutliple Linear Regression
+    |
+    |Often, we'll have data that depends on more than one variable.
+    |
+    |In which case we might want to fit a model where we assume it's some linear combination of the values.
+    |
+    |<table>
+    |  <thead>
+    |    <tr>
+    |      <th>Study Hours/week</th>
+    |      <th>Tutorials Attended</th>
+    |      <th>Grade (%)</th>
+    |    </tr>
+    |  </thead>
+    |  <tbody>
+    |    <tr><td>2</td><td>1</td><td>42</td></tr>
+    |    <tr><td>4</td><td>1</td><td>52</td></tr>
+    |    <tr><td>2</td><td>4</td><td>56</td></tr>
+    |    <tr><td>4</td><td>4</td><td>66</td></tr>
+    |    <tr><td>6</td><td>4</td><td>76</td></tr>
+    |    <tr><td>6</td><td>7</td><td>86</td></tr>
+    |  </tbody>
+    |</table>
+    |
+    |This might fit as "Grade = 30 + 5 × Study Hours + 4 × Tutorials Attended"
+    |
+    |But we're likely to have a few problems...
+    |
+    |---
+    |
     |## Successive approximation
     |
-    |When the data starts getting too big, the equation becomes too big to just "work out".
+    |When the data starts getting too big (e.g. has a lot of dimensions), the equation becomes too big to just "work out".
     |
-    |Instead, we find ourselves having to use a process of *successive approximation*:
+    |Instead, we find ourselves having to use a process of *successive approximation* to work out the coefficients against each variable:
     |
     |* Take a guess
     |
@@ -589,8 +620,8 @@ val regression = DeckBuilder(1920, 1080)
     ))
   .veautifulSlide(<.div(
     <.h2("Gradient descent"),
-    markdown.div("""|In linear regression, we have two variables. The slope and the offset of the line.
-                  |Let's just approximate one of them for now. 
+    markdown.div("""|Gradient descent tries to work out the coefficients for each variable using successive approximation. 
+                    |I'm going to show it just for one variable, but really this happens on a "hyperplane" - a shape that has as many dimensions as there are coefficients to work out.
                   |
                   |How *bad* our fit is depends on our loss function (the mean squared error).
                   |Mathematically, if we "differentiate" the loss function, we get an equation for its gradient (slope at any point).
@@ -610,11 +641,85 @@ val regression = DeckBuilder(1920, 1080)
                   |""".stripMargin),
     <.p(GradientDescent())
   ))
+   .markdownSlides(
+    """
+    |
+    |## The problem of data being correlated
+    |
+    |Let's go back to our study example. 
+    |
+    |<table>
+    |  <thead>
+    |    <tr>
+    |      <th>Study Hours/week</th>
+    |      <th>Tutorials Attended</th>
+    |      <th>Grade (%)</th>
+    |    </tr>
+    |  </thead>
+    |  <tbody>
+    |    <tr><td>2</td><td>1</td><td>42</td></tr>
+    |    <tr><td>4</td><td>1</td><td>52</td></tr>
+    |    <tr><td>2</td><td>4</td><td>56</td></tr>
+    |    <tr><td>4</td><td>4</td><td>66</td></tr>
+    |    <tr><td>6</td><td>4</td><td>76</td></tr>
+    |    <tr><td>6</td><td>7</td><td>86</td></tr>
+    |  </tbody>
+    |</table>
+    |
+    |The chances are that study hours and tutorials attended are actually pretty correlated. They're not independent but depend on
+    |the student's time and conscientiousness. We've got one dimension appearing as if it's two dimensions, making it no longer really linear.
+    |
+    |We could find that if we trained on data that included these (as well as independent variables, e.g. age)
+    |we would "overfit" on this data. It would get too sensitive to how particular data points *happened* to vary in those two dimensions
+    |and try too hard follow every random wiggle in the data set.
+    |
+    |""".stripMargin)
+    .veautifulSlide(<.div(
+    <.h2("Ridge regression"),
+    markdown.div("""|Ridge regression tries to deal with correlated data by making the model less sensitive to small errors.
+                    |
+                    |It gives a penalty (called lambda) to having a high coefficient in any given parameter
+                    |
+                    |That flattens the gradient descent curve, making it less sensitive to values being off by a little, so long as they're close.
+                  |""".stripMargin),
+    <.p(
+      GradientDescent(), " ",
+      (GradientDescent(flattenAmount = 0.7, flattenWidth = 3))
+    )
+  ))
+  .markdownSlides(
+    """
+    |
+    |## Categorical data
+    |
+    |Let's go back to our study example. 
+    |
+    |<table>
+    |  <thead>
+    |    <tr>
+    |      <th>Study Hours/week</th>
+    |      <th>Tutorials Attended</th>
+    |      <th>Grade (%)</th>
+    |    </tr>
+    |  </thead>
+    |  <tbody>
+    |    <tr><td>2</td><td>1</td><td>42</td></tr>
+    |    <tr><td>4</td><td>1</td><td>52</td></tr>
+    |    <tr><td>2</td><td>4</td><td>56</td></tr>
+    |    <tr><td>4</td><td>4</td><td>66</td></tr>
+    |    <tr><td>6</td><td>4</td><td>76</td></tr>
+    |    <tr><td>6</td><td>7</td><td>86</td></tr>
+    |  </tbody>
+    |</table>
+    |
+    |That works ok for your *mark*, but what if what we care about is whether you *drop out*. Or even whether you *fail* (which might depend on more than your mark, e.g. did you do all the compulsory stuff?)
+    |
+    |Those sorts of decisions are yes/no decisions, not a number, so we can't fit a straight line to them.
+    |
+    |""".stripMargin)
   .veautifulSlide(<.div(
     <.h2("Logistic regression"),
     markdown.div("""|Sometimes, we're trying to predict something that's *true* or *false* rather than having a continuous value.
-                    |
-                    |E.g. "Will you fail an exam?"
                     |
                     |In these cases, we try to fit a function to the *probability* that you'll be in one of the classes (failing or passing)
                     |
