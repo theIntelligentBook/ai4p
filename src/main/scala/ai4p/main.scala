@@ -55,7 +55,11 @@ given markdown:Markup = Markup(marked(_))
         "Regression" -> site.add("regression",
           Alternative("Slide deck", Deck(() => fromexamples.regression)),
         ),
-      )
+
+        "KMeans & KNN" -> site.add("kmeansknn",
+          Alternative("Slide deck", Deck(() => fromexamples.kmeansknn)),
+        ),
+      ),
 
     )
 
