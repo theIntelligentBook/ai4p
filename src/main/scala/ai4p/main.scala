@@ -66,6 +66,11 @@ given markdown:Markup = Markup(marked(_))
 
       ),
 
+      "Reasoning and Verification" -> site.Toc(
+        "Intro" -> site.addPage("reasoning", reasoning.reasoningIntro),
+
+      ),
+
     )
 
     site.attachTo(n)
