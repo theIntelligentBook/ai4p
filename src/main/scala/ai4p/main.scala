@@ -8,6 +8,7 @@ import org.scalajs.dom
 val site = Site()
 
 import typings.marked.mod.marked
+
 import com.wbillingsley.veautiful.doctacular.*
 import Medium.* 
 
@@ -68,6 +69,10 @@ given markdown:Markup = Markup(marked(_))
 
       "Reasoning and Verification" -> site.Toc(
         "Intro" -> site.addPage("reasoning", reasoning.reasoningIntro),
+
+        "Reasoning and Logic" -> site.add("decisions",
+          Alternative("Slide deck", Deck(() => reasoning.reasoningDeck )),
+        ),
 
       ),
 
