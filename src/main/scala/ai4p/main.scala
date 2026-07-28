@@ -70,7 +70,7 @@ given markdown:Markup = Markup(Marked.parse(_))
       "Reasoning and Verification" -> site.Toc(
         "Intro" -> site.addPage("reasoning", reasoning.reasoningIntro),
 
-        "Reasoning and Logic" -> site.add("decisions",
+        "Reasoning and Logic" -> site.add("reasoning",
           Alternative("Slide deck", Deck(() => reasoning.reasoningDeck )),
         ),
 
