@@ -9,7 +9,6 @@ ThisBuild / scalaVersion := "3.5.2"
 
 lazy val ai4p = project.in(file("."))
   .enablePlugins(ScalaJSPlugin)
-  .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
   .settings(
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     resolvers += "jitpack" at "https://jitpack.io",
@@ -32,11 +31,6 @@ lazy val ai4p = project.in(file("."))
     scalaJSLinkerConfig ~= {
       _.withModuleKind(ModuleKind.ESModule)
         .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("ai4p"))) 
-    },
-
-    // To use ScalablyTypedConverterExternalNpmPlugin
-    externalNpm := {
-      baseDirectory.value
     },
 
     // Used by GitHub Actions to get the script out from the .gitignored target directory

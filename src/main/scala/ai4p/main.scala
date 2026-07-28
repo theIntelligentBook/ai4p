@@ -7,12 +7,12 @@ import org.scalajs.dom
 /** The doctacular site */
 val site = Site()
 
-import typings.marked.mod.marked
+import typings.Marked
 
 import com.wbillingsley.veautiful.doctacular.*
 import Medium.* 
 
-given markdown:Markup = Markup(marked(_))
+given markdown:Markup = Markup(Marked.parse(_))
 
 @main def main() = {
     println("hello world")
