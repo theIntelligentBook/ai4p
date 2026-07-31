@@ -74,6 +74,9 @@ given markdown:Markup = Markup(Marked.parse(_))
           Alternative("Slide deck", Deck(() => reasoning.reasoningDeck )),
         ),
 
+        "The Turing Test" -> site.add("turingtest",
+          Alternative("Slide deck", Deck(() => reasoning.turingtest )),
+        ),
       ),
 
     )
