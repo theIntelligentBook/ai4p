@@ -131,8 +131,10 @@ val turingtest = DeckBuilder(1920, 1080)
       |
       |Aphantasia - differences in how we generate mental imagery
       |
-      |---
-      |
+      |""".stripMargin)
+    .imageSlide("An image not quite how I 'pictured' it even though I couldn't", "images/gpt from the wings.jpg")
+    .markdownSlides(
+    """|
       |### For AI, we are inevitably reductionist
       |
       |To get an AI to produce an image, we have to *give it* functionality to produce images
