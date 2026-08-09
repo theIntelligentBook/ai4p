@@ -82,13 +82,14 @@ given markdown:Markup = Markup(Marked.parse(_))
       "Probability and Uncertainty" -> site.Toc(
         "Intro" -> site.addPage("uncertainty", uncertainty.uncertaintyIntro),
 
-        "Reasoning and Logic" -> site.add("reasoning",
-          Alternative("Slide deck", Deck(() => reasoning.reasoningDeck )),
+        "Monte Carlo Methods" -> site.add("montecarlo",
+          Alternative("Slide deck", Deck(() => uncertainty.monteCarlo)),
         ),
 
-        "The Turing Test" -> site.add("turingtest",
-          Alternative("Slide deck", Deck(() => reasoning.turingtest )),
+        "Particle Filters" -> site.add("particleFilters",
+          Alternative("Slide deck", Deck(() => uncertainty.particleFilters)),
         ),
+
       ),
 
     )
