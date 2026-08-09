@@ -18,13 +18,18 @@
     <!-- Asyncify, for turning student synchronous code Async -->
     <script src="https://www.wbillingsley.com/asyncify/dist/main.js"></script>
 
+    <link rel="stylesheet" href="assets/scatter.css" />
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js"></script>
 
   </head>
-  <body>
-    <body style="min-height: calc(100vh); margin: 0;">
-      <div id="render-here"></div>
-      <script type="module" src="main.js"></script>
-    </body>
+  <body style="min-height: calc(100vh); margin: 0;">
+    <div id="render-here"></div>
+    <script type="module" src="main.js"></script>
+
+    <script>
+        // ace.js editor needs this to make text selections work in Chrome (otherwise it can't calculate scale correctly)
+        document.documentElement.style.zoom = 1
+    </script>
   </body>
 </html>

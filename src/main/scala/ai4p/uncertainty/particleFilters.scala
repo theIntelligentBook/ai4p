@@ -9,8 +9,14 @@ import ai4p.{*, given}
 import Common.*
 import ai4p.uncertainty.widgets.{BridgeOpenWidget, BridgeHiddenWidget, ParticleFilter1D, ParticleFilter2D, Suit, Seat}
 
+
+import canvasland.{CanvasLand, LineTurtle, Turtle}
+import coderunner.JSCodable
+
+
 import site.given
 
+val scilly = <.img(^.src := "assets/images/scilly isles.jpg").build().create()
 
 val particleFilters = DeckBuilder(1920, 1080)
   .markdownSlide(
@@ -19,6 +25,27 @@ val particleFilters = DeckBuilder(1920, 1080)
       |
       |""".stripMargin
   ).withClass("center middle")
+  .imageSlide("Engraving of the Scilly Naval Disaster 1707", "https://upload.wikimedia.org/wikipedia/commons/d/d5/HMS_Association_%281697%29.jpg")
+  .veautifulSlide(<.div(
+      <.h2("Sailing into the Channel"),
+      markdown.div(
+        """We should be able to sail into the Channel with
+          |
+          |```js
+          |left(30); forward(600); right(20); forward(300);
+          |```
+          |
+          |But what if storms, winds, or currents means our first leg was a little bit wrong?
+          |""".stripMargin),
+      JSCodable(CanvasLand()(
+        viewSize = 920 -> 640,
+        fieldSize = 1280 -> 720,        
+        r = Turtle(50, 600),
+        setup = (c) => {
+          c.drawImage(scilly, 0, 0,1280, 720, 0,0,1280, 720)
+        }
+      ))(tilesMode = false, fontSize = 20)
+    ))
   .markdownSlides(
     """
       |
