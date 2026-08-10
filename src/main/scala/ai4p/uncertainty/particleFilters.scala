@@ -16,7 +16,7 @@ import coderunner.JSCodable
 
 import site.given
 
-val scilly = <.img(^.src := "assets/images/scilly isles.jpg").build().create()
+val scilly = <.img(^.src := "images/scilly isles.jpg").build().create()
 
 val particleFilters = DeckBuilder(1920, 1080)
   .markdownSlide(
