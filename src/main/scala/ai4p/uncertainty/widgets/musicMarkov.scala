@@ -43,6 +43,30 @@ object MusicMarkov {
     case Major extends Scale(Vector("C", "D", "E", "F", "G", "A", "B", "C"), Vector(0, 2, 4, 5, 7, 9, 11, 12))
     case Minor extends Scale(Vector("C", "D", "Eb", "F", "G", "Ab", "Bb", "C"), Vector(0, 2, 3, 5, 7, 8, 10, 12))
 
+  /**
+   * The bass line underneath the melody: a chord progression, one chord per bar (4 beats of 4:4
+   * time), chosen with its own tiny Markov chain — but this time the *state* is "which
+   * progression are we playing", not an individual note. Normally it plays the standard I–IV–V–I;
+   * there's a small chance each phrase of switching to the alternate I–vi–IV–V for a phrase, and
+   * a large chance of switching straight back — so the alternate progression reads as an
+   * occasional, brief detour rather than the new normal.
+   */
+  enum ChordMode:
+    case Normal, Alternate
+
+  val normalProgression: Vector[Int] = Vector(1, 4, 5, 1) // I IV V I
+  val alternateProgression: Vector[Int] = Vector(1, 6, 4, 5) // I vi IV V
+  val romanNumeral: Map[Int, String] = Map(1 -> "I", 4 -> "IV", 5 -> "V", 6 -> "VI")
+
+  def progressionOf(mode: ChordMode): Vector[Int] = mode match
+    case ChordMode.Normal => normalProgression
+    case ChordMode.Alternate => alternateProgression
+
+  /** Called once per *phrase* (every 4 bars) to decide whether to keep or switch chord progression. */
+  def nextChordMode(mode: ChordMode, rng: Random): ChordMode = mode match
+    case ChordMode.Normal => if rng.nextDouble() < 0.15 then ChordMode.Alternate else ChordMode.Normal
+    case ChordMode.Alternate => if rng.nextDouble() < 0.7 then ChordMode.Normal else ChordMode.Alternate
+
   /** A musical event: a scale degree (1 = tonic, ... 8 = the tonic an octave up) and a note length. */
   case class Note(degree: Int, duration: Duration)
 
@@ -107,6 +131,7 @@ object MusicMarkov {
     " .mz-note-char" -> "font-weight: bold; font-size: 1rem;",
     " .mz-note-len" -> "font-size: 0.65rem; color: #666;",
     " .mz-state" -> "font-size: 0.9rem; color: #333; margin: 8px 0 4px 0;",
+    " .mz-bass-state" -> "font-size: 0.85rem; color: #555; margin: 2px 0 8px 0; font-style: italic;",
     " .mz-section-title" -> "font-size: 0.85rem; font-weight: bold; color: #555; margin-top: 8px;",
     " .mz-bar-row" -> "display: flex; align-items: center; gap: 6px; margin: 2px 0; font-size: 0.8rem;",
     " .mz-bar-label" -> "width: 92px; color: #666; font-family: monospace;",
@@ -133,6 +158,10 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
   var audioCtx: Option[dom.AudioContext] = None
   var timerId: Option[Int] = None
 
+  var chordMode: ChordMode = ChordMode.Normal
+  var barPosition: Int = 0 // 0..3 — which chord of the current 4-bar progression we're on
+  var bassTimerId: Option[Int] = None
+
   def context(): Vector[Note] = history.takeRight(order)
 
   def secPerBeat: Double = 60.0 / tempoBpm
@@ -141,13 +170,26 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
     val dist = nextDistribution(context())
     dist(sampleIndex(dist.map(_._2), Random))._1
 
-  /** Hardcoded attack/release envelope so a note sounds like a key press rather than a harsh on/off click. */
+  /**
+   * Hardcoded attack/release envelope so a note sounds like a key press rather than a harsh
+   * on/off click. A plain sine has no overtones to sound harsh, but it's also thin and flute-y —
+   * a triangle wave has a bit more harmonic content (closer to a real instrument), so it's run
+   * through a gentle low-pass filter to knock the edge off the upper harmonics rather than
+   * letting them ring out unfiltered.
+   */
   def playTone(note: Note): Unit =
     audioCtx.foreach { ctx =>
       val osc = ctx.createOscillator()
+      val filter = ctx.createBiquadFilter()
       val gain = ctx.createGain()
-      osc.frequency.value = freqOf(note.degree, scale)
-      osc.connect(gain)
+      val freq = freqOf(note.degree, scale)
+      osc.`type` = "triangle"
+      osc.frequency.value = freq
+      filter.`type` = "lowpass"
+      filter.frequency.value = freq * 4.0 // keeps a few harmonics but rolls off the harsh ones
+      filter.Q.value = 0.7
+      osc.connect(filter)
+      filter.connect(gain)
       gain.connect(ctx.destination)
 
       val now = ctx.currentTime
@@ -175,16 +217,68 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
     if playing then
       timerId = Some(dom.window.setTimeout(() => stepOnce(), note.duration.beats * secPerBeat * 1000))
 
+  def currentChordDegree(): Int = progressionOf(chordMode)(barPosition)
+
+  /**
+   * A simple "bass guitar"-ish tone: a sawtooth (richer in harmonics than a plain sine, more
+   * string-like) run through a low-pass filter to knock the harshness off, pitched two octaves
+   * below the melody. One sustained note per bar — not attempting a realistic bassline rhythm,
+   * just enough to make the chord underneath the melody audible.
+   */
+  def playBassNote(): Unit =
+    audioCtx.foreach { ctx =>
+      val degree = currentChordDegree()
+      val osc = ctx.createOscillator()
+      val filter = ctx.createBiquadFilter()
+      val gain = ctx.createGain()
+      osc.`type` = "sawtooth"
+      osc.frequency.value = freqOf(degree, scale) / 4.0 // two octaves down
+      filter.`type` = "lowpass"
+      filter.frequency.value = 500.0
+      osc.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+
+      val now = ctx.currentTime
+      val dur = 4 * secPerBeat // one bar of 4:4
+      val attack = 0.03
+      val release = math.min(0.2, dur * 0.25)
+      val sustainEnd = math.max(attack, dur - release)
+      val peak = 0.16
+      val floor = 0.0001
+
+      gain.gain.setValueAtTime(floor, now)
+      gain.gain.exponentialRampToValueAtTime(peak, now + attack)
+      gain.gain.setValueAtTime(peak, now + sustainEnd)
+      gain.gain.exponentialRampToValueAtTime(floor, now + dur)
+
+      osc.start(now)
+      osc.stop(now + dur + 0.02)
+    }
+
+  def stepBar(): Unit =
+    playBassNote()
+    rerender()
+    barPosition += 1
+    if barPosition >= 4 then
+      barPosition = 0
+      chordMode = nextChordMode(chordMode, Random)
+    if playing then
+      bassTimerId = Some(dom.window.setTimeout(() => stepBar(), 4 * secPerBeat * 1000))
+
   def startPlaying(): Unit =
     if audioCtx.isEmpty then audioCtx = Some(new dom.AudioContext())
     audioCtx.foreach(_.resume())
     playing = true
     stepOnce()
+    stepBar()
 
   def stopPlaying(): Unit =
     playing = false
     timerId.foreach(dom.window.clearTimeout(_))
     timerId = None
+    bassTimerId.foreach(dom.window.clearTimeout(_))
+    bassTimerId = None
     rerender()
 
   def toggle(): Unit = if playing then stopPlaying() else startPlaying()
@@ -192,6 +286,8 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
   def reset(): Unit =
     stopPlaying()
     history = Vector(seed)
+    chordMode = ChordMode.Normal
+    barPosition = 0
     rerender()
 
   def setOrder(o: Int): Unit =
@@ -222,9 +318,10 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
     val ctx = context()
     val topNext = nextDistribution(ctx).sortBy(-_._2).take(6)
     val stateDescription = ctx.map(n => s"${noteName(n, scale)} (${n.duration.label})").mkString(" → ")
+    val chordDegree = currentChordDegree()
 
     <.div(^.cls := styling.className,
-      <.p(^.cls := "br-label", "Generates a melody one note at a time from a Markov chain — order 1 or 2, major or minor, your choice."),
+      <.p(^.cls := "br-label", "Generates a melody one note at a time from a Markov chain — order 1 or 2, major or minor, your choice. A bass line underneath plays a chord progression, one chord per bar, occasionally switching to an alternate progression via its own (much smaller) Markov chain."),
 
       <.div(^.cls := "mz-sequence",
         for (note, i) <- history.zipWithIndex yield
@@ -235,6 +332,10 @@ case class MusicMarkovWidget(seed: Note = Note(1, Duration.Crotchet)) extends DH
       ),
 
       <.div(^.cls := "mz-state", s"Current state: $stateDescription"),
+      <.div(^.cls := "mz-bass-state",
+        s"Bass: ${romanNumeral.getOrElse(chordDegree, chordDegree.toString)} " +
+          s"— ${chordMode} progression, bar ${barPosition + 1}/4"
+      ),
 
       <.div(^.cls := "mz-section-title", "Top predicted next notes"),
       barChart(topNext),
