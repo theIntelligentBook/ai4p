@@ -90,6 +90,10 @@ given markdown:Markup = Markup(Marked.parse(_))
           Alternative("Slide deck", Deck(() => uncertainty.particleFilters)),
         ),
 
+        "Markov Models" -> site.add("markov",
+          Alternative("Slide deck", Deck(() => uncertainty.markovModels)),
+        ),
+
       ),
 
     )
