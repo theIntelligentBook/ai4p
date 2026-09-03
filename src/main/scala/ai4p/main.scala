@@ -96,6 +96,14 @@ given markdown:Markup = Markup(Marked.parse(_))
 
       ),
 
+      "Neural Networks" -> site.Toc(
+        "Intro" -> site.addPage("neuralnets", neuralnets.neuralnetsIntro),
+
+        "Neural Networks" -> site.add("neuralnetsDeck",
+          Alternative("Slide deck", Deck(() => neuralnets.neuralnets)),
+        ),
+      )
+
     )
 
     site.attachTo(n)
