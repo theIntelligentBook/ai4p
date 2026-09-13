@@ -199,9 +199,9 @@ val embeddings = DeckBuilder(1920, 1080)
       |
       |Each attention head learns three "matrices" (grids of numbers to transform emeddings by):
       |
-      |* W<sub>Q</sub>, which will produce **queries** - multiply it by a word's embedding and you get the word's "query" matrix
-      |* W<sub>K</sub>, which will produce **keys** - multiply it by a word's embedding and you get the word's "key" matrix
-      |* W<sub>V</sub>, which will produce **values** - multiply it by a word's embedding and you get the word's "value" matrix
+      |* W<sub>Q</sub>, which will produce **queries** - multiply it by a word's embedding and you get the word's "query" vector
+      |* W<sub>K</sub>, which will produce **keys** - multiply it by a word's embedding and you get the word's "key" vector
+      |* W<sub>V</sub>, which will produce **values** - multiply it by a word's embedding and you get the word's "value" vector
       |
       |Suppose we are looking at a token A, and we want to know it's relationship with token B. 
       |
