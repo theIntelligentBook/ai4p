@@ -102,6 +102,10 @@ given markdown:Markup = Markup(Marked.parse(_))
         "Neural Networks" -> site.add("neuralnetsDeck",
           Alternative("Slide deck", Deck(() => neuralnets.neuralnets)),
         ),
+
+        "Embeddings & Attention" -> site.add("embeddingsDeck",
+          Alternative("Slide deck", Deck(() => embeddings.embeddings)),
+        ),
       )
 
     )
