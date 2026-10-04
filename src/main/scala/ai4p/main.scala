@@ -106,6 +106,12 @@ given markdown:Markup = Markup(Marked.parse(_))
         "Embeddings & Attention" -> site.add("embeddingsDeck",
           Alternative("Slide deck", Deck(() => embeddings.embeddings)),
         ),
+      ),
+
+      "Doing Stuff" -> site.Toc(
+        "The Model Context Protocol" -> site.add("mcpDeck",
+          Alternative("Slide deck", Deck(() => doingstuff.mcpDeck)),
+        ),
       )
 
     )
